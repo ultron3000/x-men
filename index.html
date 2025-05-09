@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>X-Men</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: black;
+      color: #ffcc00;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2em;
+    }
+    .movies {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .movie {
+      background: #222;
+      border: 2px solid #ffcc00;
+      border-radius: 12px;
+      width: 200px;
+      padding: 10px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .movie:hover {
+      transform: scale(1.05);
+      background: #333;
+    }
+    .movie img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .movie-title {
+      margin-top: 10px;
+      font-size: 1em;
+      font-weight: bold;
+    }
+  
+    @media (max-width: 600px) {
+      .movies {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      .movie {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .movie img {
+        height: auto;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>🚨 X-Men Cinematic Universe</h1>
+
+<div class="movies" id="movies"></div>
+
+<script>
+const movies = [
+  { title: "X-Men-2000", video: "https://sskt.sipeskrlbtrujill.sbs:443/v4/sc/cbrgs/index-f2-v1-a1.txt", image: "https://cdna.artstation.com/p/assets/images/images/033/954/536/large/e-j-tangonan-x-men-modern-poster.jpg?1611009444" },
+  { title: "X-2-2003", video: "https://scvo.sperlinglayma.sbs:443/v4/xq/bnb5s/index-f2-v1-a1.txt", image: "https://lh5.googleusercontent.com/proxy/ljAsIiDN45jYgviarNFu6qkGou7ulX46KYM6eIY8MRyZqqCcDZQCUE_vGAw8vVZN3eYI1WMBXGXVTu9MlrSNchNjbZVINetwqCI5No_MCg" },
+  { title: "X-Men: The Last Stand-2006", video: "https://sskt.koontzhittpittman.sbs:443/v4/us/rmjft/index-f2-v1-a1.txt", image: "https://i.pinimg.com/474x/8e/f7/2e/8ef72e2fa09676e586538257d4558f54.jpg" },
+  { title: "X-Men: Days of Future Past-2014", video: "https://smashyplayer.top:443/hls/o5P_hyfL0we6VeGRxsQ16A/xq/cvax3u5u/mdouc/tt/index-f2-v1-a1.m3u8", image: "https://m.media-amazon.com/images/M/MV5BYzU5MjVjNGYtMGNlYy00NGY0LWI2OWYtZmY4NjNjZTZhZTg5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" },
+  { title: "X-Men Origins: Wolverine-2009", video: "https://sr81.sewwhitema.sbs/v4/xq/s5rmc/index-f1-v1-a1.txt", image: "https://media-cache.cinematerial.com/p/500x/pwccytiy/x-men-origins-wolverine-poster.jpg?v=1493362215" },
+  { title: "The Wolverine-2013", video: "https://slob.boehmerrbfjx.sbs:443/v4/ox/ij5im/index-f2-v1-a1.txt", image: "https://m.media-amazon.com/images/M/MV5BNzg1MDQxMTQ2OF5BMl5BanBnXkFtZTcwMTk3MjAzOQ@@._V1_FMjpg_UX1000_.jpg" },
+  { title: "LOGAN-2017", video: "https://sipt.ghwillawkni.sbs/v4/ck/i3rag/index-f1-v1-a1.txt", image: "https://i.ebayimg.com/00/s/MTYwMFgxMDM4/z/IgYAAOSwBr1kXLCG/$_57.JPG?set_id=880000500F" },
+  { title: "X-Men: First Class-2011", video: "https://spuc.cedekkerohartf.sbs:443/v4/lf/uwvex/index-f1-v1-a1.txt", image: "https://cdn.moviescore.com/posters/6164.jpg" },
+  { title: "X-Men:Apocalypse-2016", video: "https://sojg.hungerfordeckertev.sbs/v4/ho/u3bgj/cf-master.txt?v=1731011695", image: "https://i.pinimg.com/564x/ac/e8/88/ace88874895e4968d898ba709b3b6509.jpg" },
+  { title: "Dark Phoenix-2019", video: "https://sdqm.monkberga.sbs/v4/ck/xuvs5/index-f2-v1.txt", image: "https://m.media-amazon.com/images/M/MV5BZjcwMDIyNjctMDVmNS00MzkyLTgxMDMtNTFmNTk0NDkyNzdjXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" },
+  { title: "Deadpool-2016", video: "https://sdqm.steffeyroxyh.sbs/v4/il/io585/index-f1-v1.txt", image: "https://www.posterized.in/cdn/shop/files/56.jpg?v=1736616795" },
+  { title: "DEADPOOL 2-2018", video: "https://sipt.parrishiadedeau.sbs/v4/xq/3g8qo/index-f1-v1-a1.txt", image: "https://i.ebayimg.com/images/g/WGkAAOSwI7ljObU9/s-l1200.jpg" },
+  { title: "Deadpool & Wolverine-2024", video: "https://smashyplayer.top/hls/zElj__BMNc7Ao-cmStUm5Q/6s/1xmpfi6l/msnls/tt/index-f1-v1-a1.m3u8", image: "https://posterspy.com/wp-content/uploads/2024/05/final.jpg" },  
+  { title: "The New Mutants-2020", video: "https://sipt.madrigalcajig.sbs:443/v4/ic/hqckd/index-f2-v1-a1.txt", image: "https://lh3.googleusercontent.com/proxy/D9lS0t7kK0FWYa2T0OYuA8r5XvnSeCBn6ivBQgdDM8nAA1zgmfTnoYPVX3SF_kvL_WlxNqs8x1N5mH0k8jRssNW7psrG7sj9RIEQhOs4" },
+];
+
+const container = document.getElementById('movies');
+movies.forEach((movie, index) => {
+  const div = document.createElement('div');
+  div.className = 'movie';
+  div.innerHTML = `
+    <img src="${movie.image}" alt="${movie.title}">
+    <div class="movie-title">${movie.title}</div>
+  `;
+  div.onclick = () => {
+    const url = `player.html?title=${encodeURIComponent(movie.title)}&video=${encodeURIComponent(movie.video)}&index=${index}`;
+    window.location.href = url;
+  };
+  container.appendChild(div);
+});
+</script>
+
+</body>
+</html>
