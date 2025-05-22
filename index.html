@@ -68,9 +68,8 @@
 <body>
 
 <h1>🚨 X-MEN Cinematic Universe</h1>
-
+<input id="searchBar" placeholder="Search X-MEN movies..." style="width: calc(100% - 40px);max-width: 100%;margin: 20px auto;padding: 10px 15px;font-size: 1em;border-radius: 8px;border: 2px solid #ffcc00;background: #111;color: #ffcc00;box-shadow: 0 0 10px #ffcc00a0;display: block;" type="text"/>
 <div class="movies" id="movies"></div>
-
 <script>
 const movies = [
   { title: "X-MEN-2000", video: "https://sskt.sipeskrlbtrujill.sbs:443/v4/sc/cbrgs/index-f2-v1-a1.txt", image: "https://cdna.artstation.com/p/assets/images/images/033/954/536/large/e-j-tangonan-x-men-modern-poster.jpg?1611009444" },
@@ -103,6 +102,24 @@ movies.forEach((movie, index) => {
   };
   container.appendChild(div);
 });
+
+// Live Search Filter
+
+document.getElementById('searchBar').addEventListener('input', function () {
+
+  const searchTerm = this.value.toLowerCase();
+
+  const movieDivs = document.querySelectorAll('.movie');
+
+  movieDivs.forEach(div => {
+
+    const title = div.querySelector('.movie-title').textContent.toLowerCase();
+
+    div.style.display = title.includes(searchTerm) ? 'block' : 'none';
+
+  });
+
+});  
 </script>
 
 </body>
