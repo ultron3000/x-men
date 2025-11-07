@@ -78,6 +78,26 @@
       visibility: visible;
       opacity: 1;
     }
+
+    /* Fullscreen alignment fix */
+    :fullscreen .video-container,
+    .video-container:fullscreen {
+      padding-bottom: 0 !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      border-radius: 0 !important;
+    }
+
+    :fullscreen video,
+    .video-container:fullscreen video {
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover;
+    }
+
+    /* NOTE: removed the rule that forced controls visible in fullscreen
+       so JS can hide them. */
+
     @media (max-width: 768px) {
       .controls-container {
         padding: 0.5rem;
@@ -109,21 +129,21 @@
       <h1 id="movie-title" class="text-2xl md:text-3xl font-bold text-amber-400 truncate max-w-xs md:max-w-md">Movie Title</h1>
       <a href="index.html" class="flex items-center text-gray-300 hover:text-amber-400 transition">
         <i class="fas fa-arrow-left mr-2"></i>
-        <span class="hidden md:inline">Back to Movies</span>
+        <span class="hidden md:inline"></span>
       </a>
     </div>
 
     <!-- Video Player -->
     <div class="video-container group" id="video-container">
       <video id="video" class="w-full" crossorigin="anonymous"></video>
-      
+
       <!-- Custom Controls -->
       <div id="controls-container" class="controls-container absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 opacity-0 group-hover:opacity-100">
         <!-- Progress Bar -->
         <div class="progress-container mb-2" id="progress-container">
           <div class="progress-bar" id="progress-bar"></div>
         </div>
-        
+
         <!-- Bottom Controls -->
         <div class="flex items-center justify-between">
           <!-- Left Controls -->
@@ -139,24 +159,24 @@
               <i class="fas fa-forward text-lg"></i>
               <span class="tooltip absolute bottom-full mb-2 px-2 py-1 text-xs bg-gray-800 rounded">Forward 10s</span>
             </button>
-            
+
             <!-- Volume Controls -->
             <div class="flex items-center">
               <button id="volume-btn" class="control-btn text-white hover:text-amber-400 transition">
                 <i class="fas fa-volume-up text-lg"></i>
               </button>
               <div class="volume-container ml-2 flex items-center" id="volume-container">
-                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" 
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1"
                        class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
               </div>
             </div>
-            
+
             <!-- Time Display -->
             <div class="text-sm text-gray-300 hidden md:block">
               <span id="current-time">00:00</span> / <span id="duration">00:00</span>
             </div>
           </div>
-          
+
           <!-- Right Controls -->
           <div class="flex items-center space-x-2 md:space-x-4">
             <!-- Playback Speed -->
@@ -173,7 +193,7 @@
                 <div class="speed-option px-3 py-2 cursor-pointer" data-speed="2">2x</div>
               </div>
             </div>
-            
+
             <!-- Subtitles -->
             <div class="relative">
               <button id="subtitle-btn" class="control-btn text-white hover:text-amber-400 transition">
@@ -184,7 +204,7 @@
                 <div class="subtitle-option px-3 py-2 cursor-pointer" data-subtitle="en">English</div>
               </div>
             </div>
-            
+
             <!-- Quality -->
             <div class="relative">
               <button id="quality-btn" class="control-btn text-white hover:text-amber-400 transition">
@@ -197,7 +217,7 @@
                 <div class="quality-option px-3 py-2 cursor-pointer" data-quality="360">360p</div>
               </div>
             </div>
-            
+
             <!-- Fullscreen -->
             <button id="fullscreen-btn" class="control-btn text-white hover:text-amber-400 transition">
               <i class="fas fa-expand text-lg"></i>
@@ -206,15 +226,15 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Mobile Volume (hidden on desktop) -->
     <div class="mt-2 flex items-center md:hidden" id="mobile-volume">
       <i class="fas fa-volume-down text-gray-400 mr-2"></i>
-      <input type="range" id="mobile-volume-slider" min="0" max="1" step="0.01" value="1" 
+      <input type="range" id="mobile-volume-slider" min="0" max="1" step="0.01" value="1"
              class="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
       <i class="fas fa-volume-up text-gray-400 ml-2"></i>
     </div>
-    
+
     <!-- Additional Info -->
     <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Playback Info -->
@@ -239,7 +259,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Shortcuts -->
       <div class="bg-gray-800 p-4 rounded-lg">
         <h3 class="text-lg font-semibold text-amber-400 mb-2">Keyboard Shortcuts</h3>
@@ -266,7 +286,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Resume Options -->
       <div class="bg-gray-800 p-4 rounded-lg">
         <h3 class="text-lg font-semibold text-amber-400 mb-2">Resume Options</h3>
@@ -330,14 +350,15 @@
     let hls;
     let lastVolume = 1;
     let isSettingsMenuOpen = false;
+    let controlsTimeout;
 
     // Initialize player
     function initPlayer() {
       movieTitle.textContent = title || 'Movie Player';
-      
+
       // Set up event listeners
       setupEventListeners();
-      
+
       // Start loading the video
       loadVideo();
     }
@@ -347,14 +368,14 @@
       // Video events
       video.addEventListener('timeupdate', updateProgress);
       video.addEventListener('loadedmetadata', updateDuration);
-      video.addEventListener('play', updatePlayPauseIcon);
-      video.addEventListener('pause', updatePlayPauseIcon);
+      video.addEventListener('play', onPlay);
+      video.addEventListener('pause', onPause);
       video.addEventListener('volumechange', updateVolumeIcon);
       video.addEventListener('click', togglePlayPause);
       video.addEventListener('dblclick', toggleFullscreen);
       video.addEventListener('webkitbeginfullscreen', () => document.body.classList.add('fullscreen'));
       video.addEventListener('webkitendfullscreen', () => document.body.classList.remove('fullscreen'));
-      
+
       // Control buttons
       playPauseBtn.addEventListener('click', togglePlayPause);
       rewindBtn.addEventListener('click', () => seek(-10));
@@ -365,7 +386,7 @@
       fullscreenBtn.addEventListener('click', toggleFullscreen);
       resumeBtn.addEventListener('click', resumeFromLastPosition);
       restartBtn.addEventListener('click', restartFromBeginning);
-      
+
       // Progress bar
       progressContainer.addEventListener('mousedown', startDraggingProgress);
       progressContainer.addEventListener('touchstart', startDraggingProgress, { passive: false });
@@ -373,12 +394,12 @@
       document.addEventListener('touchmove', dragProgress, { passive: false });
       document.addEventListener('mouseup', stopDraggingProgress);
       document.addEventListener('touchend', stopDraggingProgress);
-      
+
       // Settings menus
       speedBtn.addEventListener('click', () => toggleMenu(speedMenu));
       subtitleBtn.addEventListener('click', () => toggleMenu(subtitleMenu));
       qualityBtn.addEventListener('click', () => toggleMenu(qualityMenu));
-      
+
       // Click outside to close menus
       document.addEventListener('click', (e) => {
         if (!speedBtn.contains(e.target) && !speedMenu.contains(e.target)) {
@@ -391,22 +412,21 @@
           qualityMenu.classList.remove('active');
         }
       });
-      
+
       // Keyboard shortcuts
       document.addEventListener('keydown', handleKeyboardShortcuts);
-      
-      // Show/hide controls on mouse movement
-      let controlsTimeout;
-      videoContainer.addEventListener('mousemove', () => {
-        controlsContainer.style.opacity = '1';
-        clearTimeout(controlsTimeout);
-        controlsTimeout = setTimeout(() => {
-          if (!video.paused) {
-            controlsContainer.style.opacity = '0';
-          }
-        }, 3000);
-      });
-      
+
+      // Show/hide controls on mouse movement/touch/keyboard
+      const activityHandler = (e) => {
+        // show controls on any activity (mouse move, touchstart, keydown)
+        showControlsTemporarily();
+      };
+
+      // Listen on document so fullscreen mouse movement is captured too
+      document.addEventListener('mousemove', activityHandler);
+      document.addEventListener('touchstart', activityHandler, { passive: true });
+      document.addEventListener('keydown', activityHandler);
+
       // Volume hover effect
       volumeBtn.addEventListener('mouseenter', () => {
         volumeContainer.classList.add('active');
@@ -416,7 +436,7 @@
           volumeContainer.classList.remove('active');
         }
       });
-      
+
       // Speed options
       document.querySelectorAll('.speed-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -427,7 +447,7 @@
           speedMenu.classList.remove('active');
         });
       });
-      
+
       // Subtitle options
       document.querySelectorAll('.subtitle-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -444,7 +464,7 @@
           subtitleMenu.classList.remove('active');
         });
       });
-      
+
       // Quality options
       document.querySelectorAll('.quality-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -467,13 +487,20 @@
           }
         });
       });
+
+      // fullscreenchange: re-run controls timer to allow auto-hide in fullscreen
+      document.addEventListener('fullscreenchange', () => {
+        // When entering/exiting fullscreen, show controls and restart timer
+        showControlsTemporarily();
+        // Also if entering fullscreen on mobile, attempt orientation lock (handled in toggleFullscreen)
+      });
     }
 
     // Load the video
     function loadVideo() {
       showLoading('Loading video...');
-      
-      if (Hls.isSupported()) {
+
+      if (videoUrl && Hls && Hls.isSupported()) {
         hls = new Hls({
           maxBufferLength: 30,
           maxMaxBufferLength: 600,
@@ -483,21 +510,21 @@
           lowLatencyMode: false,
           backBufferLength: 30
         });
-        
+
         hls.loadSource(videoUrl);
         hls.attachMedia(video);
-        
+
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
           // Populate quality menu
-          const qualityMenu = document.getElementById('quality-menu');
-          qualityMenu.innerHTML = `
+          const qualityMenuEl = document.getElementById('quality-menu');
+          qualityMenuEl.innerHTML = `
             <div class="quality-option px-3 py-2 cursor-pointer" data-quality="auto">Auto</div>
             ${data.levels.map(level => `
               <div class="quality-option px-3 py-2 cursor-pointer" data-quality="${level.height}">${level.height}p</div>
             `).join('')}
           `;
-          
-          // Set up quality option event listeners
+
+          // Re-bind the newly created quality options
           document.querySelectorAll('.quality-option').forEach(option => {
             option.addEventListener('click', () => {
               const quality = option.dataset.quality;
@@ -517,7 +544,7 @@
               qualityMenu.classList.remove('active');
             });
           });
-          
+
           // Load subtitle if provided
           if (subtitleUrl) {
             const track = document.createElement('track');
@@ -527,14 +554,14 @@
             track.src = subtitleUrl;
             track.default = true;
             video.appendChild(track);
-            
-            // Update subtitle menu
-            subtitleMenu.innerHTML = `
+
+            // Update subtitle menu (re-bind)
+            const subtitleMenuEl = document.getElementById('subtitle-menu');
+            subtitleMenuEl.innerHTML = `
               <div class="subtitle-option px-3 py-2 cursor-pointer" data-subtitle="none">None</div>
               <div class="subtitle-option px-3 py-2 cursor-pointer" data-subtitle="en">English</div>
             `;
-            
-            // Set up subtitle option event listeners
+
             document.querySelectorAll('.subtitle-option').forEach(option => {
               option.addEventListener('click', () => {
                 const subtitle = option.dataset.subtitle;
@@ -551,17 +578,17 @@
               });
             });
           }
-          
+
           hideLoading();
           video.play();
-          
+
           // Check for saved position
           const lastTime = localStorage.getItem(saveKey);
           if (lastTime) {
             video.currentTime = parseFloat(lastTime);
           }
         });
-        
+
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             switch(data.type) {
@@ -579,20 +606,19 @@
             }
           }
         });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      } else if (video.canPlayType && video.canPlayType('application/vnd.apple.mpegurl')) {
         // Native HLS support (Safari)
         video.src = videoUrl;
         video.addEventListener('loadedmetadata', () => {
           hideLoading();
           video.play();
-          
-          // Check for saved position
+
           const lastTime = localStorage.getItem(saveKey);
           if (lastTime) {
             video.currentTime = parseFloat(lastTime);
           }
         });
-        
+
         // Load subtitle if provided
         if (subtitleUrl) {
           const track = document.createElement('track');
@@ -662,10 +688,11 @@
 
     // Update volume
     function updateVolume() {
-      const value = this.value || event.target.value;
+      // `this` may be volumeSlider or mobileVolumeSlider; fallback to event target
+      const value = (typeof this.value !== 'undefined') ? this.value : (event && event.target ? event.target.value : 1);
       video.volume = value;
       volumeSlider.value = value;
-      mobileVolumeSlider.value = value;
+      if (mobileVolumeSlider) mobileVolumeSlider.value = value;
       lastVolume = value;
     }
 
@@ -675,34 +702,44 @@
       if (video.volume === 0 || video.muted) {
         icon.classList.replace('fa-volume-up', 'fa-volume-mute');
       } else if (video.volume < 0.5) {
-        icon.classList.replace('fa-volume-mute', 'fa-volume-down');
-        icon.classList.replace('fa-volume-up', 'fa-volume-down');
+        // ensure correct classes
+        icon.classList.remove('fa-volume-up', 'fa-volume-mute', 'fa-volume-down');
+        icon.classList.add('fa-volume-down');
       } else {
-        icon.classList.replace('fa-volume-mute', 'fa-volume-up');
-        icon.classList.replace('fa-volume-down', 'fa-volume-up');
+        icon.classList.remove('fa-volume-mute', 'fa-volume-down', 'fa-volume-up');
+        icon.classList.add('fa-volume-up');
       }
     }
 
-    // Toggle fullscreen
+    // Fullscreen with auto-rotate on mobile
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
-        videoContainer.requestFullscreen().catch(err => {
+        videoContainer.requestFullscreen().then(() => {
+          // Try to lock landscape on supported devices
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+        }).catch(err => {
           console.error(`Error attempting to enable fullscreen: ${err.message}`);
         });
       } else {
         document.exitFullscreen();
+        // Unlock orientation when exiting fullscreen
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
       }
     }
 
     // Toggle settings menu
     function toggleMenu(menu) {
       isSettingsMenuOpen = !menu.classList.contains('active');
-      
+
       // Close all menus first
       document.querySelectorAll('.settings-menu').forEach(m => {
         m.classList.remove('active');
       });
-      
+
       // Open the clicked menu if needed
       if (isSettingsMenuOpen) {
         menu.classList.add('active');
@@ -711,36 +748,37 @@
 
     // Update progress bar
     function updateProgress() {
-      if (!isDraggingProgress) {
+      if (!isDraggingProgress && video.duration) {
         const progress = (video.currentTime / video.duration) * 100;
         progressBar.style.width = `${progress}%`;
       }
-      
+
       // Update time displays
-      currentTimeDisplay.textContent = formatTime(video.currentTime);
-      durationDisplay.textContent = formatTime(video.duration);
-      currentPosition.textContent = formatTime(video.currentTime);
-      remainingTime.textContent = formatTime(video.duration - video.currentTime);
-      
+      currentTimeDisplay.textContent = formatTime(video.currentTime || 0);
+      durationDisplay.textContent = formatTime(video.duration || 0);
+      currentPosition.textContent = formatTime(video.currentTime || 0);
+      remainingTime.textContent = formatTime((video.duration || 0) - (video.currentTime || 0));
+
       // Save progress every 10 seconds
-      if (video.currentTime % 10 < 0.1) {
+      if (!isNaN(video.currentTime) && video.currentTime % 10 < 0.1) {
         localStorage.setItem(saveKey, video.currentTime);
       }
     }
 
     // Update duration display
     function updateDuration() {
-      durationDisplay.textContent = formatTime(video.duration);
-      remainingTime.textContent = formatTime(video.duration);
+      durationDisplay.textContent = formatTime(video.duration || 0);
+      remainingTime.textContent = formatTime(video.duration || 0);
     }
 
     // Format time (seconds to HH:MM:SS)
     function formatTime(seconds) {
+      if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
       const h = Math.floor(seconds / 3600);
       const m = Math.floor((seconds % 3600) / 60);
       const s = Math.floor(seconds % 60);
-      
-      return h > 0 
+
+      return h > 0
         ? `${h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`
         : `${m}:${s < 10 ? '0' + s : s}`;
     }
@@ -767,10 +805,11 @@
     // Update progress while dragging
     function updateProgressOnDrag(e) {
       const rect = progressContainer.getBoundingClientRect();
-      const pos = (e.clientX || e.touches[0].clientX) - rect.left;
+      const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : (e.clientX || 0);
+      const pos = clientX - rect.left;
       const percent = Math.min(Math.max(pos / rect.width, 0), 1);
       progressBar.style.width = `${percent * 100}%`;
-      video.currentTime = percent * video.duration;
+      video.currentTime = percent * (video.duration || 0);
     }
 
     // Resume from last position
@@ -835,6 +874,32 @@
         localStorage.setItem(saveKey, video.currentTime);
       }
     });
+
+    // Controls show/hide helpers (works in fullscreen too)
+    function showControlsTemporarily() {
+      // Show controls immediately
+      controlsContainer.style.opacity = '1';
+      // Clear previous timer
+      clearTimeout(controlsTimeout);
+      // If video is playing, set timer to hide controls after 3s
+      if (!video.paused) {
+        controlsTimeout = setTimeout(() => {
+          controlsContainer.style.opacity = '0';
+        }, 3000);
+      }
+    }
+
+    function onPlay() {
+      updatePlayPauseIcon();
+      showControlsTemporarily();
+    }
+
+    function onPause() {
+      updatePlayPauseIcon();
+      // keep controls visible while paused
+      clearTimeout(controlsTimeout);
+      controlsContainer.style.opacity = '1';
+    }
 
     // Initialize the player
     document.addEventListener('DOMContentLoaded', initPlayer);
